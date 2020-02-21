@@ -16,7 +16,7 @@ func LoadSecretData(c client.Client, secretName, namespace, dataKey string) (str
 	if err != nil {
 		return "", err
 	}
-	for key, value := range s.Data {
+	for key := range s.Data {
 		fmt.Println("key:", key)
 	}
 	retStr, ok := s.Data[dataKey]
