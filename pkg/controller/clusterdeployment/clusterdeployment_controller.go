@@ -1547,6 +1547,7 @@ func (r *ReconcileClusterDeployment) mergePullSecrets(cd *hivev1.ClusterDeployme
 				return "", err
 			}
 		}
+		cdLog.Error(fmt.Sprintf("found a local pull secret %s", cd.Spec.PullSecretRef.Name))
 	}
 
 	// Check if global pull secret from env as it comes from hive config
