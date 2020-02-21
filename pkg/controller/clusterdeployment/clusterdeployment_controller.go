@@ -1539,25 +1539,33 @@ func (r *ReconcileClusterDeployment) mergePullSecrets(cd *hivev1.ClusterDeployme
 	var localPullSecret string
 	var err error
 
+	cdLog.Debug("mergePullSecrets")
+
 	// For code readability let's call the pull secret in cluster deployment config as local pull secret
 	if cd.Spec.PullSecretRef != nil {
+		cdLog.Debugf("*** looking for local pull secret %s", cd.Spec.PullSecretRef.Name)
 		localPullSecret, err = controllerutils.LoadSecretData(r.Client, cd.Spec.PullSecretRef.Name, cd.Namespace, corev1.DockerConfigJsonKey)
 		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return "", err
 			}
 		}
-		cdLog.Error(fmt.Sprintf("found a local pull secret %s", cd.Spec.PullSecretRef.Name))
+		cdLog.Debugf("*** found a local pull secret %s", cd.Spec.PullSecretRef.Name)
+	} else {
+		cdLog.Debugf("*** no local pull secret set %s", cd.Spec.PullSecretRef.Name)
 	}
 
 	// Check if global pull secret from env as it comes from hive config
 	globalPullSecretName := os.Getenv(constants.GlobalPullSecret)
 	var globalPullSecret string
 	if len(globalPullSecretName) != 0 {
+		cdLog.Debugf("*** looking for global pull secret %s", globalPullSecretName)
 		globalPullSecret, err = controllerutils.LoadSecretData(r.Client, globalPullSecretName, constants.HiveNamespace, corev1.DockerConfigJsonKey)
 		if err != nil {
 			return "", errors.Wrap(err, "global pull secret could not be retrieved")
 		}
+	} else {
+		cdLog.Debug("*** no global pull secret name set")
 	}
 
 	switch {
@@ -1576,7 +1584,7 @@ func (r *ReconcileClusterDeployment) mergePullSecrets(cd *hivev1.ClusterDeployme
 	case localPullSecret != "":
 		return localPullSecret, nil
 	default:
-		errMsg := "clusterdeployment must specify pull secret since hiveconfig does not specify a global pull secret"
+		errMsg := "*** clusterdeployment must specify pull secret since hiveconfig does not specify a global pull secret"
 		cdLog.Error(errMsg)
 		return "", errors.New(errMsg)
 	}
